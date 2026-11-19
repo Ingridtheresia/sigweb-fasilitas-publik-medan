@@ -1,0 +1,186 @@
+{
+  "type": "FeatureCollection",
+  "name": "fasilitas_publik_medan",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "RSUP H. Adam Malik",
+        "kategori": "kes",
+        "keterangan": "Rumah sakit rujukan utama Sumatera Utara"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.61,
+          3.5167
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "RS Santa Elisabeth Medan",
+        "kategori": "kes",
+        "keterangan": "Rumah sakit umum swasta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6712,
+          3.5755
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "RSUD Dr. Pirngadi Medan",
+        "kategori": "kes",
+        "keterangan": "Rumah sakit umum daerah Kota Medan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6867,
+          3.58
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Universitas Sumatera Utara",
+        "kategori": "pend",
+        "keterangan": "Perguruan tinggi negeri, kampus Padang Bulan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.656,
+          3.56
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Universitas Negeri Medan",
+        "kategori": "pend",
+        "keterangan": "Perguruan tinggi negeri, kampus Willem Iskandar"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.7142,
+          3.6182
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "UIN Sumatera Utara",
+        "kategori": "pend",
+        "keterangan": "Perguruan tinggi keagamaan negeri"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.674,
+          3.596
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Lapangan Merdeka",
+        "kategori": "ruang",
+        "keterangan": "Ruang terbuka publik di pusat kota"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6731,
+          3.5914
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Istana Maimun",
+        "kategori": "ruang",
+        "keterangan": "Situs warisan budaya dan wisata"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6839,
+          3.575
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Taman Ahmad Yani",
+        "kategori": "ruang",
+        "keterangan": "Taman kota"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6783,
+          3.5917
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Stasiun Kereta Api Medan",
+        "kategori": "trans",
+        "keterangan": "Simpul kereta api, termasuk layanan bandara"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6866,
+          3.5939
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Terminal Amplas",
+        "kategori": "trans",
+        "keterangan": "Terminal bus antarkota"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.716,
+          3.5388
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nama": "Bandara Kualanamu",
+        "kategori": "trans",
+        "keterangan": "Bandara internasional"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.8853,
+          3.6422
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,503 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Peta interaktif akses fasilitas publik Kota Medan (SDG 9 dan SDG 11) berbasis Leaflet.">
+<title>Peta Akses Fasilitas Publik Kota Medan</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:"Segoe UI",system-ui,sans-serif;color:#172033}
+body{display:flex;flex-direction:column}
+header{background:#0b3c5d;color:#fff;padding:10px 14px}
+header h1{margin:0;font-size:1.05rem}
+header p{margin:2px 0 0;font-size:.8rem;color:#dbe9f4}
+#map{flex:1;min-height:0}
+#status{background:#eef3fa;border-top:1px solid #cbd5e1;padding:6px 14px;font-size:.8rem}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+.tools{background:#fff;padding:6px;border-radius:8px;box-shadow:0 1px 6px #0004;display:flex;flex-direction:column;gap:6px}
+.tools button{border:1px solid #94a3b8;background:#f8fafc;border-radius:6px;padding:7px 10px;font-size:.8rem;text-align:left}
+.tools button[aria-pressed="true"]{background:#0b3c5d;color:#fff;border-color:#0b3c5d}
+.legend{background:#fff;padding:8px 10px;border-radius:8px;box-shadow:0 1px 6px #0004;font-size:.78rem;line-height:1.7}
+.legend h2{margin:0 0 2px;font-size:.82rem}
+.pin{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid #fff;color:#fff;font:700 .72rem/1 sans-serif;box-shadow:0 1px 5px #0007}
+.legend .pin{display:inline-grid;vertical-align:middle;margin-right:6px;width:20px;height:20px;box-shadow:none}
+.zona-sw{display:inline-block;width:20px;height:14px;margin-right:6px;vertical-align:middle;background:#dc262633;border:2px solid #b91c1c;border-radius:50%}
+.leaflet-popup-content h3{margin:0 0 4px;font-size:.95rem}
+.leaflet-popup-content table{border-collapse:collapse;font-size:.8rem}
+.leaflet-popup-content td{padding:1px 6px 1px 0;vertical-align:top}
+@media(max-width:520px){
+header h1{font-size:.95rem}
+header p{display:none}
+.legend{font-size:.72rem;padding:6px 8px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Peta Akses Fasilitas Publik Kota Medan</h1>
+<p>Mendukung SDG 9 (Industri, Inovasi, dan Infrastruktur) dan SDG 11 (Kota dan Permukiman Berkelanjutan)</p>
+<p>Masalah spasial: sebaran fasilitas publik di Kota Medan belum mudah dilihat sehingga warga dan pemerintah sulit menilai akses layanan dasar.</p>
+</header>
+
+<div id="map" role="application" aria-label="Peta interaktif fasilitas publik Kota Medan"></div>
+
+<div id="status" role="status" aria-live="polite">
+Klik penanda untuk melihat informasi fasilitas. Gunakan kontrol di kanan atas untuk mengganti peta dasar dan lapisan.
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+/* 1. KATEGORI FASILITAS */
+
+const KAT = {
+kes:{
+nama:'Kesehatan',
+warna:'#b91c1c',
+huruf:'K',
+sdg:'SDG 11 (akses layanan dasar)'
+},
+pend:{
+nama:'Pendidikan',
+warna:'#1d4ed8',
+huruf:'P',
+sdg:'SDG 9 dan SDG 11'
+},
+ruang:{
+nama:'Ruang Publik',
+warna:'#15803d',
+huruf:'R',
+sdg:'SDG 11 (ruang publik dan ruang hijau)'
+},
+trans:{
+nama:'Transportasi',
+warna:'#7e22ce',
+huruf:'T',
+sdg:'SDG 9 (infrastruktur) dan SDG 11'
+}
+};
+
+/* 2. SIMBOL KATEGORI */
+
+const SIMBOL = {
+kes:'M6.5 2h3v4.5H14v3H9.5V14h-3V9.5H2v-3h4.5z',
+
+pend:'M8 2 1 5.5 8 9l5-2.5V11h1.5V5.5L8 2zM4 9.3v2.2C4 12.9 5.8 14 8 14s4-1.1 4-2.5V9.3L8 11.2 4 9.3z',
+
+ruang:'M8 1.5 3.5 8h2.2L3 12h4.2v2.5h1.6V12H13l-2.7-4h2.2L8 1.5z',
+
+trans:'M4 2h8a1.5 1.5 0 0 1 1.5 1.5V10a2.5 2.5 0 0 1-2.5 2.5l1 1.5h-1.6l-.8-1.2H6.4L5.6 14H4l1-1.5A2.5 2.5 0 0 1 2.5 10V3.5A1.5 1.5 0 0 1 4 2zm.5 2v3h7V4h-7zm1.2 5a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8zm4.6 0a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8z'
+};
+
+const ikon = (k,u) =>
+`<svg viewBox="0 0 16 16" width="${u}" height="${u}" fill="#fff" aria-hidden="true" focusable="false"><path d="${SIMBOL[k]}"/></svg>`;
+
+
+/* 3. DATA CADANGAN */
+
+const DATA = [
+{n:'RSUP H. Adam Malik',k:'kes',lat:3.5167,lng:98.6100,ket:'Rumah sakit rujukan utama Sumatera Utara'},
+{n:'RS Santa Elisabeth Medan',k:'kes',lat:3.5755,lng:98.6712,ket:'Rumah sakit umum swasta'},
+{n:'RSUD Dr. Pirngadi Medan',k:'kes',lat:3.5800,lng:98.6867,ket:'Rumah sakit umum daerah Kota Medan'},
+
+{n:'Universitas Sumatera Utara',k:'pend',lat:3.5600,lng:98.6560,ket:'Perguruan tinggi negeri, kampus Padang Bulan'},
+{n:'Universitas Negeri Medan',k:'pend',lat:3.6182,lng:98.7142,ket:'Perguruan tinggi negeri, kampus Willem Iskandar'},
+{n:'UIN Sumatera Utara',k:'pend',lat:3.5960,lng:98.6740,ket:'Perguruan tinggi keagamaan negeri'},
+
+{n:'Lapangan Merdeka',k:'ruang',lat:3.5914,lng:98.6731,ket:'Ruang terbuka publik di pusat kota'},
+{n:'Istana Maimun',k:'ruang',lat:3.5750,lng:98.6839,ket:'Situs warisan budaya dan wisata'},
+{n:'Taman Ahmad Yani',k:'ruang',lat:3.5917,lng:98.6783,ket:'Taman kota'},
+
+{n:'Stasiun Kereta Api Medan',k:'trans',lat:3.5939,lng:98.6866,ket:'Simpul kereta api, termasuk layanan bandara'},
+{n:'Terminal Amplas',k:'trans',lat:3.5388,lng:98.7160,ket:'Terminal bus antarkota'},
+{n:'Bandara Kualanamu',k:'trans',lat:3.6422,lng:98.8853,ket:'Bandara internasional'}
+];
+
+
+/* 4. INISIALISASI PETA */
+
+const osm = L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+maxZoom:19,
+attribution:'&copy; OpenStreetMap contributors'
+});
+
+const jalan = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+{
+maxZoom:19,
+attribution:'Tiles &copy; Esri'
+});
+
+const sat = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+maxZoom:19,
+attribution:'Tiles &copy; Esri'
+});
+
+const map = L.map('map',{
+center:[3.5952,98.6722],
+zoom:12,
+layers:[jalan]
+});
+
+let sudahPindah = false;
+
+osm.on('tileerror',()=>{
+if(sudahPindah || !map.hasLayer(osm)) return;
+sudahPindah=true;
+map.removeLayer(osm);
+jalan.addTo(map);
+say('OpenStreetMap tidak dapat dimuat. Peta dialihkan ke Esri Street Map.');
+});
+
+L.control.scale({imperial:false}).addTo(map);
+
+
+/* 5. LAYER TEMATIK DAN MARKER */
+
+const grup = {};
+const overlay = {};
+
+Object.keys(KAT).forEach(k=>{
+grup[k]=L.layerGroup().addTo(map);
+
+overlay[
+`<span class="pin" style="display:inline-grid;width:16px;height:16px;background:${KAT[k].warna}">${ikon(k,10)}</span> ${KAT[k].nama}`
+]=grup[k];
+});
+
+const zona = L.layerGroup();
+
+let daftar = [];
+
+function bangun(list){
+
+daftar=list;
+
+Object.values(grup).forEach(g=>g.clearLayers());
+zona.clearLayers();
+
+list.forEach(d=>{
+
+const c=KAT[d.k];
+
+if(!c){
+console.warn('Kategori tidak dikenal:',d);
+return;
+}
+
+/* PERBAIKAN UTAMA: markerIcon */
+
+const markerIcon = L.divIcon({
+className:'',
+html:`<span class="pin" style="background:${c.warna}" aria-hidden="true">${ikon(d.k,14)}</span>`,
+iconSize:[24,24],
+iconAnchor:[12,12],
+popupAnchor:[0,-12]
+});
+
+L.marker([d.lat,d.lng],{
+icon:markerIcon,
+title:d.n,
+alt:d.n,
+keyboard:true
+})
+
+.bindPopup(`
+<h3>${d.n}</h3>
+<table>
+<tr><td><b>Kategori</b></td><td>${c.nama}</td></tr>
+<tr><td><b>Keterangan</b></td><td>${d.ket}</td></tr>
+<tr><td><b>Kaitan SDG</b></td><td>${c.sdg}</td></tr>
+<tr><td><b>Koordinat</b></td><td>${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}</td></tr>
+</table>
+`)
+
+.addTo(grup[d.k]);
+
+if(d.k==='kes'){
+L.circle([d.lat,d.lng],{
+radius:2000,
+color:'#b91c1c',
+weight:2,
+fillColor:'#dc2626',
+fillOpacity:.12
+})
+.bindTooltip('Zona layanan 2 km: '+d.n)
+.addTo(zona);
+}
+
+});
+
+}
+
+
+/* 6. MEMUAT DATA GEOJSON */
+
+fetch('./data/fasilitas.geojson')
+
+.then(response=>{
+if(!response.ok){
+throw new Error('HTTP '+response.status);
+}
+return response.json();
+})
+
+.then(g=>{
+
+if(!g.features || !Array.isArray(g.features)){
+throw new Error('Format GeoJSON tidak valid');
+}
+
+const fasilitas=g.features.map(f=>({
+n:f.properties.nama,
+k:f.properties.kategori,
+ket:f.properties.keterangan,
+lat:f.geometry.coordinates[1],
+lng:f.geometry.coordinates[0]
+}));
+
+bangun(fasilitas);
+
+say('Data berhasil dimuat: '+fasilitas.length+' fasilitas publik.');
+
+console.log('Data GeoJSON berhasil dibaca:',fasilitas);
+
+})
+
+.catch(error=>{
+
+console.error('Gagal memuat GeoJSON:',error);
+
+bangun(DATA);
+
+say('GeoJSON gagal dimuat. Menampilkan '+DATA.length+' data cadangan.');
+
+});
+
+
+overlay['<span class="zona-sw"></span> Zona layanan kesehatan (2 km)']=zona;
+
+L.control.layers(
+{
+'Esri Street Map':jalan,
+'OpenStreetMap':osm,
+'Citra Satelit (Esri)':sat
+},
+overlay,
+{collapsed:true}
+).addTo(map);
+
+
+/* 7. LEGENDA */
+
+const legenda=L.control({position:'bottomleft'});
+
+legenda.onAdd=()=>{
+
+const d=L.DomUtil.create('div','legend');
+
+d.setAttribute('role','group');
+d.setAttribute('aria-label','Legenda peta');
+
+d.innerHTML=
+'<h2>Legenda</h2>'+
+Object.entries(KAT).map(([k,c])=>
+`<div><span class="pin" style="background:${c.warna}">${ikon(k,12)}</span>${c.nama}</div>`
+).join('')+
+'<div><span class="zona-sw"></span>Zona layanan kesehatan 2 km</div>';
+
+return d;
+
+};
+
+legenda.addTo(map);
+
+
+/* 8. INTERAKSI PETA */
+
+const status=document.getElementById('status');
+
+const say=t=>status.textContent=t;
+
+let ukur=false;
+let titik=[];
+let garis=null;
+
+let hasilLokasi=L.layerGroup().addTo(map);
+
+const fmt=m=>
+m>=1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m';
+
+
+/* 9. KONTROL PETA */
+
+const alat=L.control({position:'topleft'});
+
+alat.onAdd=()=>{
+
+const d=L.DomUtil.create('div','tools');
+
+d.innerHTML=`
+<button type="button" id="bLokasi">Lokasi saya</button>
+<button type="button" id="bUkur" aria-pressed="false">Ukur jarak</button>
+<button type="button" id="bReset">Bersihkan</button>
+<button type="button" id="bAwal">Kembali ke Medan</button>
+`;
+
+L.DomEvent.disableClickPropagation(d);
+
+return d;
+
+};
+
+alat.addTo(map);
+
+
+/* 10. LOKASI SAYA */
+
+document.getElementById('bLokasi').onclick=()=>{
+
+say('Mencari lokasi Anda...');
+
+map.locate({
+setView:true,
+maxZoom:15,
+timeout:10000
+});
+
+};
+
+map.on('locationfound',e=>{
+
+hasilLokasi.clearLayers();
+
+L.marker(e.latlng)
+.addTo(hasilLokasi)
+.bindPopup('Lokasi Anda (akurasi ±'+Math.round(e.accuracy)+' m)')
+.openPopup();
+
+L.circle(e.latlng,{
+radius:e.accuracy,
+weight:1
+}).addTo(hasilLokasi);
+
+let dekat=null;
+let min=Infinity;
+
+daftar.filter(d=>d.k==='kes').forEach(d=>{
+
+const j=e.latlng.distanceTo([d.lat,d.lng]);
+
+if(j<min){
+min=j;
+dekat=d;
+}
+
+});
+
+if(dekat){
+say('Lokasi ditemukan. Fasilitas kesehatan terdekat: '+dekat.n+' ('+fmt(min)+', garis lurus).');
+}
+
+});
+
+map.on('locationerror',()=>{
+say('Lokasi tidak dapat diakses. Periksa izin lokasi pada browser.');
+});
+
+
+/* 11. UKUR JARAK */
+
+const bUkur=document.getElementById('bUkur');
+
+bUkur.onclick=()=>{
+
+ukur=!ukur;
+
+bUkur.setAttribute('aria-pressed',ukur);
+
+map.getContainer().style.cursor=ukur?'crosshair':'';
+
+say(
+ukur
+?'Mode ukur aktif. Klik beberapa titik pada peta untuk mengukur jarak.'
+:'Mode ukur dimatikan.'
+);
+
+};
+
+map.on('click',e=>{
+
+if(!ukur)return;
+
+titik.push(e.latlng);
+
+if(!garis){
+garis=L.polyline([],{
+color:'#d97706',
+weight:4,
+dashArray:'8 6'
+}).addTo(map);
+}
+
+garis.setLatLngs(titik);
+
+L.circleMarker(e.latlng,{
+radius:4,
+color:'#d97706',
+fillOpacity:1
+}).addTo(hasilLokasi);
+
+let total=0;
+
+for(let i=1;i<titik.length;i++){
+total+=titik[i-1].distanceTo(titik[i]);
+}
+
+say('Jarak total: '+fmt(total)+' ('+titik.length+' titik).');
+
+});
+
+
+/* 12. RESET DAN KEMBALI KE MEDAN */
+
+function bersih(){
+
+titik=[];
+
+if(garis){
+map.removeLayer(garis);
+garis=null;
+}
+
+hasilLokasi.clearLayers();
+
+say('Hasil ukur dan lokasi dibersihkan.');
+
+}
+
+document.getElementById('bReset').onclick=bersih;
+
+document.getElementById('bAwal').onclick=()=>{
+
+map.setView([3.5952,98.6722],12);
+
+say('Tampilan dikembalikan ke pusat Kota Medan.');
+
+};
+
+</script>
+</body>
+</html>
